@@ -1,0 +1,56 @@
+'CONFIGURAÇÃO
+LerControle = "True"
+Valores[0] = 0
+String = ""
+'OS VALORES SÃO INDICADOS NA SEGUINTE ORDEM:
+'REDMIN(0), GREENMIN(1), BLUEMIN(2), REDMAX(3), GREENMAX(4), BLUEMAX(5)
+
+Leitura[0] = 0
+Sensor.SetMode(4, 4)
+
+Sub LER
+  While LerControle
+    Leitura = Sensor.ReadRaw(4, 3)
+    LCD.StopUpdate()
+    LCD.Clear()
+    LCD.Write(30, 0, String)
+    LCD.Write(30, 20, Leitura[0])
+    LCD.Write(30, 30, Leitura[1])
+    LCD.Write(30, 40, Leitura[2])
+    LCD.Update()
+    Program.Delay(200)
+  EndWhile
+EndSub
+
+'INÍCIO
+String = "VALOR MAXIMO"
+Thread.Run = LER
+Buttons.Wait()
+Buttons.Flush()
+LerControle = "False"
+Program.Delay(200)
+Valores[0] = Leitura[0]
+Valores[1] = Leitura[1]
+Valores[2] = Leitura[2]
+LerControle = "True"
+
+String = "VALOR MINIMO"
+Thread.Run = LER
+Buttons.Wait()
+Buttons.Flush()
+Valores[3] = Leitura[0]
+Valores[4] = Leitura[1]
+Valores[5] = Leitura[2]
+
+For i = 0 To 5
+  Saida[i] = Valores[i] + ""
+  If Text.GetLength(Saida[i]) < 3 Then
+    Saida[i] = "0" + Valores[i]
+  EndIf
+EndFor
+
+Arquivo = EV3File.OpenWrite("OBR/legonautas")
+EV3File.WriteLine(Arquivo, (Saida[0] + ";" + Saida[1] + ";" + Saida[2] + ";" + Saida[3] + ";" + Saida[4] + ";" + Saida[5] + ";"))
+EV3File.Close(Arquivo)
+
+'FIM
