@@ -70,4 +70,7 @@ EndSub
 
 
 'INICIO
-Motor.StartPower("BC", 50)
+Thread.Run = SEGUIRLINHA
+While "True"
+  Program.Delay(1000)
+EndWhile
