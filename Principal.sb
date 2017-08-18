@@ -78,8 +78,8 @@ Sub CALCULARFORCAS
     EndIf
   Else
     EV3.SetLEDColor("GREEN", "NORMAL")
-    ForcaE = ForcaPadrao*((Math.Power(MediaE, 2) + 125*MediaE - 7500)/15000)
-    ForcaD = ForcaPadrao*((Math.Power(MediaD, 2) + 125*MediaD - 7500)/15000)
+    ForcaE = ForcaPadrao*(Math.Power(MediaE, 2) -5000)/5000
+    ForcaD = ForcaPadrao*(Math.Power(MediaD, 2) -5000)/5000
     If ForcaE < 20 And ForcaE > -20 Then
       If ForcaE >= 0 Then
         ForcaE = 20
