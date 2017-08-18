@@ -55,9 +55,9 @@ Sub ATUALIZARCORES
       Media = 100
     EndIf
     If PortaCor = 1 Then
-      MediaD = Media
-    Else
       MediaE = Media
+    Else
+      MediaD = Media
     EndIf
   EndFor
 EndSub
