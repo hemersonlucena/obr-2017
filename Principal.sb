@@ -63,13 +63,14 @@ Sub ATUALIZARCORES
 EndSub
 
 
-Sub CALCULARFORCAS()
-  ForcaE = -55*((Math.Power(MediaE, 2) + 125*MediaE - 7500)/15000)
-  ForcaD = -55*((Math.Power(MediaD, 2) + 125*MediaD - 7500)/15000)
+Sub CALCULARFORCAS
+  ForcaE = -45*((Math.Power(MediaE, 2) + 125*MediaE - 7500)/15000)
+  ForcaD = -45*((Math.Power(MediaD, 2) + 125*MediaD - 7500)/15000)
 EndSub
 
 
 'INICIO
+ATUALIZARCALIBRAGEM()
 Thread.Run = SEGUIRLINHA
 While "True"
   Program.Delay(1000)
