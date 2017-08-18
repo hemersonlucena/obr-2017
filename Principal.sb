@@ -5,6 +5,18 @@ Sensor.SetMode(2, 0)
 Sensor.SetMode(3, 0)
 
 
+'VARIÁVEIS
+MutexPiloto = Thread.CreateMutex()
+ForcaPadrao = -45
+
+
+'VARIÁVEIS INICIALIZADAS
+ForcaD = 0
+ForcaE = 0
+MediaD = 0
+MediaE = 0
+
+
 'FUNÇÕES
 Sub ATUALIZARCALIBRAGEM
   Handle = EV3File.OpenRead("OBR/legonautas")
@@ -18,5 +30,77 @@ Sub ATUALIZARCALIBRAGEM
   Valores[5] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem, 21, 3))
 EndSub
 
+
+Sub SEGUIRLINHA
+  While "True"
+    ATUALIZARCORES()
+    CALCULARFORCAS()
+    Thread.Lock(MutexPiloto)
+    Motor.StartPower("B", ForcaE)
+    Motor.StartPower("C", ForcaD)
+    Thread.Unlock(MutexPiloto)
+  EndWhile  
+EndSub
+
+
+Sub ATUALIZARCORES
+  For PortaCor = 1 To 4 Step 3
+    Leitura = Sensor.ReadRaw(PortaCor, 3)
+    Leitura[0] = (100*Leitura[0] - 100*Valores[3])/(Valores[0] - Valores[3])
+    Leitura[1] = (100*Leitura[1] - 100*Valores[4])/(Valores[1] - Valores[4])
+    Leitura[2] = (100*Leitura[2] - 100*Valores[5])/(Valores[2] - Valores[5])
+    Media = (Leitura[0] + Leitura[1] + Leitura[2])/3
+    If Media < 0 Then
+      Media = 0 
+    ElseIf Media > 100 Then
+      Media = 100
+    EndIf
+    If PortaCor = 1 Then
+      MediaE = Media
+    Else
+      MediaD = Media
+    EndIf
+  EndFor
+EndSub
+
+
+Sub CALCULARFORCAS
+  If MediaE <= 50 And MediaD <= 50 Then
+    EV3.SetLEDColor("ORANGE", "NORMAL")
+    Diferenca = MediaE - MediaD
+    ForcaE = -18 + (ForcaPadrao+18)/2
+    ForcaD = -18 + (ForcaPadrao+18)/2
+    Subtrair = (ForcaPadrao+18)*Math.Abs(Diferenca/50)/2
+    If Diferenca <= 0 Then
+      ForcaE = ForcaE - Subtrair
+    Else
+      ForcaD = ForcaD - Subtrair
+    EndIf
+  Else
+    EV3.SetLEDColor("GREEN", "NORMAL")
+    ForcaE = ForcaPadrao*(Math.Power(MediaE, 2) -5000)/5000
+    ForcaD = ForcaPadrao*(Math.Power(MediaD, 2) -5000)/5000
+    If ForcaE < 20 And ForcaE > -20 Then
+      If ForcaE >= 0 Then
+        ForcaE = 20
+      Else
+        ForcaE = -20
+      EndIf
+    EndIf
+    If ForcaD < 20 And ForcaD > -20 Then
+      If ForcaD >= 0 Then
+        ForcaD = 20
+      Else
+        ForcaD = -20
+      EndIf
+    EndIf
+  EndIf
+EndSub
+
+
 'INICIO
-Motor.StartPower("BC", 50)
+ATUALIZARCALIBRAGEM()
+Thread.Run = SEGUIRLINHA
+While "True"
+  Program.Delay(1000)
+EndWhile
