@@ -55,14 +55,43 @@ Sub ATUALIZARCORES
     ElseIf Media > 100 Then
       Media = 100
     EndIf
+    If Media <= 90 And Leitura[1] > Leitura[0] Then
+      Media = Media + Math.Abs(Leitura[1] - Leitura[0])*13/2
+      If Media > 85 Then
+        Media = 85
+      EndIf
+    EndIf
     If PortaCor = 1 Then
       MediaE = Media
     Else
       MediaD = Media
     EndIf
+  VERIFICARVERDE()
   EndFor
   MOSTRARMEDIAS()
 EndSub
+
+
+Sub VERIFICARVERDE
+  If Leitura[0] < 5 And Leitura[1] > 10 Then
+    Thread.Lock(MutexPiloto)
+    EV3.SetLEDColor("RED", "NORMAL")
+    CURVAVERDE()
+    EV3.SetLEDColor("GREEN", "NORMAL")
+    Thread.Unlock(MutexPiloto)
+  EndIf
+EndSub
+
+
+Sub CURVAVERDE
+  Motor.MoveSync("BC", -40, -40, 180, "True")
+  If PortaCor = 1 Then
+    Motor.MoveSync("BC", 40, -40, 193, "True")
+  Else
+    Motor.MoveSync("BC", -40, 40, 193, "True")
+  EndIf
+EndSub
+
 
 
 Sub CALCULARFORCAS
