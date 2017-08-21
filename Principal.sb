@@ -76,11 +76,19 @@ Sub VERIFICARVERDE
   If Leitura[0] < 5 And Leitura[1] > 10 Then
     Thread.Lock(MutexPiloto)
     EV3.SetLEDColor("RED", "NORMAL")
-    Motor.Stop("BC", "True")
-    Program.Delay(5000)
+    CURVAVERDE()
     EV3.SetLEDColor("GREEN", "NORMAL")
     Thread.Unlock(MutexPiloto)
-    'TODO: Criar CURVAVERDE()
+  EndIf
+EndSub
+
+
+Sub CURVAVERDE
+  Motor.MoveSync("BC", -40, -40, 180, "True")
+  If PortaCor = 1 Then
+    Motor.MoveSync("BC", 40, -40, 193, "True")
+  Else
+    Motor.MoveSync("BC", -40, 40, 193, "True")
   EndIf
 EndSub
 
