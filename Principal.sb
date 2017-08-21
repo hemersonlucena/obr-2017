@@ -7,7 +7,7 @@ Sensor.SetMode(3, 0)
 
 'VARIÁVEIS
 MutexPiloto = Thread.CreateMutex()
-ForcaPadrao = -45
+ForcaPadrao = -65
 
 
 'VARIÁVEIS INICIALIZADAS
@@ -61,11 +61,14 @@ Sub ATUALIZARCORES
       MediaD = Media
     EndIf
   EndFor
+  MOSTRARMEDIAS()
 EndSub
 
 
 Sub CALCULARFORCAS
-  If MediaE <= 50 And MediaD <= 50 Then
+  Bool1 = (MediaE <= 80 And MediaD <= 80)
+  Bool2 = (Math.Abs(MediaE - MediaD) < 10)
+  If Bool1 Or Bool2 Then
     EV3.SetLEDColor("ORANGE", "NORMAL")
     Diferenca = MediaE - MediaD
     ForcaE = -18 + (ForcaPadrao+18)/2
@@ -80,21 +83,16 @@ Sub CALCULARFORCAS
     EV3.SetLEDColor("GREEN", "NORMAL")
     ForcaE = ForcaPadrao*(Math.Power(MediaE, 2) -5000)/5000
     ForcaD = ForcaPadrao*(Math.Power(MediaD, 2) -5000)/5000
-    If ForcaE < 20 And ForcaE > -20 Then
-      If ForcaE >= 0 Then
-        ForcaE = 20
-      Else
-        ForcaE = -20
-      EndIf
-    EndIf
-    If ForcaD < 20 And ForcaD > -20 Then
-      If ForcaD >= 0 Then
-        ForcaD = 20
-      Else
-        ForcaD = -20
-      EndIf
-    EndIf
   EndIf
+EndSub
+
+
+Sub MOSTRARMEDIAS
+  LCD.StopUpdate()
+  LCD.Clear()
+  LCD.Write(10, 10, "E: " + MediaE)
+  LCD.Write(10, 30, "D: " + MediaD)
+  LCD.Update()
 EndSub
 
 
