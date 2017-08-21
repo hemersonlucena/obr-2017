@@ -1,0 +1,72 @@
+PortaCor = 1
+Sensor.SetMode(PortaCor, 4)
+Sub ATUALIZARCALIBRAGEM
+  
+  Calibragem = EV3File.ReadLine(EV3File.OpenRead("OBR/legonautas"))
+  Valores[0] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem, 1, 3))
+  Valores[1] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem, 5, 3))
+  Valores[2] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem, 9, 3))
+  Valores[3] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem, 13, 3))
+  Valores[4] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem, 17, 3))
+  Valores[5] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem, 21, 3))
+  EV3File.Close(EV3File.OpenRead("OBR/legonautas"))
+EndSub
+
+Sub ATUALIZARLINHA
+  Leitura = Sensor.ReadRaw(PortaCor, 3)
+  RawRed = Leitura[0]
+  RawGreen = Leitura[1]
+  Leitura[0] = (100*Leitura[0] - 100*Valores[3])/(Valores[0] - Valores[3])
+  Leitura[1] = (100*Leitura[1] - 100*Valores[4])/(Valores[1] - Valores[4])
+  Leitura[2] = (100*Leitura[2] - 100*Valores[5])/(Valores[2] - Valores[5])
+  Media = (Leitura[0] + Leitura[1] + Leitura[2])/3
+  If Media < 0 Then
+    Media = 0 
+  ElseIf Media > 100 Then
+    Media = 100
+  EndIf
+  Media2 = Media
+  If Media <= 90 And Leitura[1] > Leitura[0] Then
+    Media2 = Media + Math.Abs(Leitura[1] - Leitura[0])*13/2
+    If Media2 > 85 Then
+      Media2 = 85
+    EndIf
+  EndIf
+  If PortaCor = 1 Then
+    MediaE = Media
+  Else
+    MediaD = Media
+  EndIf
+EndSub
+
+Sub BOTOES
+  While "True"
+    Buttons.Wait()
+    If PortaCor = 4 Then
+      PortaCor = 1
+    Else
+      PortaCor = 4
+    EndIf
+    Buttons.Flush()  
+  EndWhile
+EndSub
+
+  
+  ATUALIZARCALIBRAGEM()
+  Thread.Run = BOTOES
+  While "true"
+  ATUALIZARLINHA()
+  LCD.StopUpdate()
+  Program.Delay(10)
+  LCD.Clear()
+  Program.Delay(10)
+  LCD.Write(10, 25, "R: " + Leitura[0])
+  LCD.Write(15, 35, "G: " + Leitura[1])
+  LCD.Write(20, 45, "B: " + Leitura[2])
+  LCD.Write(25, 55, "Media 1: " + Media)
+  LCD.Write(25, 65, "Media 2: " + Media2)
+  LCD.Write(25, 75, "Porta: " + PortaCor)
+  LCD.Write(25, 85, "RR: " + RawRed)
+  LCD.Write(25, 95, "RG: " + RawGreen)
+  LCD.Update()
+    EndWhile
