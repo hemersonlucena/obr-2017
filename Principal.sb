@@ -7,7 +7,7 @@ Sensor.SetMode(3, 0)
 
 'VARIÁVEIS
 MutexPiloto = Thread.CreateMutex()
-ForcaPadrao = -65
+ForcaPadrao = -45
 
 
 'VARIÁVEIS INICIALIZADAS
@@ -73,11 +73,18 @@ EndSub
 
 
 Sub VERIFICARVERDE
-  If Leitura[0] < 5 And Leitura[1] > 10 Then
-    Thread.Lock(MutexPiloto)
+  Bool3 = Leitura[0] < 5 And Leitura[1] > 10
+  Bool4 = Leitura[0] < 5 And (Leitura[1] - Leitura[0]) > 8
+  If Bool3 Then
     EV3.SetLEDColor("RED", "NORMAL")
-    CURVAVERDE()
+  ElseIf Bool4 Then
     EV3.SetLEDColor("GREEN", "NORMAL")
+  EndIf
+  If Bool3 Or Bool4 Then
+    Thread.Lock(MutexPiloto)
+    'EV3.SetLEDColor("RED", "NORMAL")
+    CURVAVERDE()
+    'EV3.SetLEDColor("GREEN", "NORMAL")
     Thread.Unlock(MutexPiloto)
   EndIf
 EndSub
@@ -95,24 +102,23 @@ EndSub
 
 
 Sub CALCULARFORCAS
-  Bool1 = (MediaE <= 80 And MediaD <= 80)
-  Bool2 = (Math.Abs(MediaE - MediaD) < 10)
-  If Bool1 Or Bool2 Then
     EV3.SetLEDColor("ORANGE", "NORMAL")
     Diferenca = MediaE - MediaD
-    ForcaE = -18 + (ForcaPadrao+18)/2
-    ForcaD = -18 + (ForcaPadrao+18)/2
-    Subtrair = (ForcaPadrao+18)*Math.Abs(Diferenca/50)/2
+    ForcaE = ForcaPadrao
+    ForcaD = ForcaPadrao
+    Subtrair = ForcaPadrao*Math.Abs(Diferenca/20)
+    If Subtrair/ForcaPadrao > 1.5 Then
+      Subtrair =  1.5*ForcaPadrao
+    EndIf
     If Diferenca <= 0 Then
       ForcaE = ForcaE - Subtrair
     Else
       ForcaD = ForcaD - Subtrair
     EndIf
-  Else
-    EV3.SetLEDColor("GREEN", "NORMAL")
-    ForcaE = ForcaPadrao*(Math.Power(MediaE, 2) -5000)/5000
-    ForcaD = ForcaPadrao*(Math.Power(MediaD, 2) -5000)/5000
-  EndIf
+      'Seguir Linha obsoleto
+    'EV3.SetLEDColor("GREEN", "NORMAL")
+    'ForcaE = ForcaPadrao*(Math.Power(MediaE, 2) -5000)/5000
+    'ForcaD = ForcaPadrao*(Math.Power(MediaD, 2) -5000)/5000
 EndSub
 
 
