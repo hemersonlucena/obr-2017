@@ -101,7 +101,6 @@ Sub CURVAVERDE
 EndSub
 
 
-
 Sub CALCULARFORCAS
     EV3.SetLEDColor("ORANGE", "NORMAL")
     Diferenca = MediaE - MediaD
@@ -116,28 +115,21 @@ Sub CALCULARFORCAS
     Else
       ForcaD = ForcaD - Subtrair
     EndIf
-    
-    'UTILIZA SEMPRE A FORÇA MÁXIMA DE -75 DURANTE A 
-    'SUBIDA DA RAMPA
+
     If NaRampa Then
-      If ForcaE < ForcaD Then
+      If ForcaE < ForcaD Then 'FORÇA MÁXIMA NA RAMPA
         ForcaD = -75*ForcaD/ForcaE
         ForcaE = -75
       Else
         ForcaE = -75*ForcaE/ForcaD
         ForcaD = -75
       EndIf
-      If ForcaE > 0 Then
+      If ForcaE > 0 Then 'NÃO EXISTE MOVIMENTO CONTRÁRIO NA RAMPA
         ForcaE = 0
       ElseIf ForcaD > 0 Then
         ForcaD = 0
       EndIf
     EndIf
-    
-      'Seguir Linha obsoleto
-    'EV3.SetLEDColor("GREEN", "NORMAL")
-    'ForcaE = ForcaPadrao*(Math.Power(MediaE, 2) -5000)/5000
-    'ForcaD = ForcaPadrao*(Math.Power(MediaD, 2) -5000)/5000
 EndSub
 
 
