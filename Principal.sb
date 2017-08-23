@@ -75,7 +75,7 @@ EndSub
 
 Sub VERIFICARVERDE
   Bool3 = Leitura[0] < 5 And Leitura[1] > 10
-  Bool4 = Leitura[0] < 5 And (Leitura[1] - Leitura[0]) > 8
+  Bool4 = Leitura[0] < 5 And (Leitura[1] - Leitura[0]) > 6
   If Bool3 Then
     EV3.SetLEDColor("RED", "NORMAL")
   ElseIf Bool4 Then
