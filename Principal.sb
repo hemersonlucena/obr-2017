@@ -8,7 +8,7 @@ Sensor.SetMode(3, 0)
 'VARIÁVEIS
 MutexPiloto = Thread.CreateMutex()
 NaRampa = "False"
-ForcaPadrao = -45
+ForcaPadrao = -50
 
 
 'VARIÁVEIS INICIALIZADAS
@@ -106,9 +106,9 @@ Sub CALCULARFORCAS
     Diferenca = MediaE - MediaD
     ForcaE = ForcaPadrao
     ForcaD = ForcaPadrao
-    Subtrair = ForcaPadrao*Math.Abs(Diferenca/20)
-    If Subtrair/ForcaPadrao > 1.5 Then
-      Subtrair =  1.5*ForcaPadrao
+    Subtrair = ForcaPadrao*Math.Abs(Diferenca/15)
+    If Subtrair/ForcaPadrao > 1.7 Then
+      Subtrair =  1.7*ForcaPadrao
     EndIf
     If Diferenca <= 0 Then
       ForcaE = ForcaE - Subtrair
