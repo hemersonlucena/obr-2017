@@ -7,6 +7,7 @@ Sensor.SetMode(3, 0)
 
 'VARIÁVEIS
 MutexPiloto = Thread.CreateMutex()
+NaRampa = "False"
 ForcaPadrao = -45
 
 
@@ -115,10 +116,40 @@ Sub CALCULARFORCAS
     Else
       ForcaD = ForcaD - Subtrair
     EndIf
+    
+    'UTILIZA SEMPRE A FORÇA MÁXIMA DE -75 DURANTE A 
+    'SUBIDA DA RAMPA
+    If NaRampa Then
+      If ForcaE < ForcaD Then
+        ForcaD = -75*ForcaD/ForcaE
+        ForcaE = -75
+      Else
+        ForcaE = -75*ForcaE/ForcaD
+        ForcaD = -75
+      EndIf
+      If ForcaE > 0 Then
+        ForcaE = 0
+      ElseIf ForcaD > 0 Then
+        ForcaD = 0
+      EndIf
+    EndIf
+    
       'Seguir Linha obsoleto
     'EV3.SetLEDColor("GREEN", "NORMAL")
     'ForcaE = ForcaPadrao*(Math.Power(MediaE, 2) -5000)/5000
     'ForcaD = ForcaPadrao*(Math.Power(MediaD, 2) -5000)/5000
+EndSub
+
+
+Sub RAMPA
+  While "True"
+    If Sensor.ReadRawValue(2, 0) < 80 Then
+      Program.Delay(750)
+      If Sensor.ReadRawValue(2, 0) < 80 Then
+        NaRampa = "True"
+      EndIf
+    EndIf
+  EndWhile
 EndSub
 
 
@@ -134,6 +165,7 @@ EndSub
 'INICIO
 ATUALIZARCALIBRAGEM()
 Thread.Run = SEGUIRLINHA
+Thread.Run = RAMPA
 While "True"
   Program.Delay(1000)
 EndWhile
