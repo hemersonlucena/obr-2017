@@ -21,14 +21,21 @@ MediaE = 0
 'FUNÇÕES
 Sub ATUALIZARCALIBRAGEM
   Handle = EV3File.OpenRead("OBR/legonautas")
-  Calibragem = EV3File.ReadLine(Handle)
+  Calibragem[0] = EV3File.ReadLine(Handle)'Linha 1 -> sensor esquerdo
+  Calibragem[1] = EV3File.ReadLine(Handle)'Linha 2 -> sensor direito
   EV3File.Close(Handle)
-  Valores[0] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem, 1, 3))
-  Valores[1] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem, 5, 3))
-  Valores[2] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem, 9, 3))
-  Valores[3] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem, 13, 3))
-  Valores[4] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem, 17, 3))
-  Valores[5] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem, 21, 3))
+  Valores[0] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem[0], 1, 3))
+  Valores[1] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem[0], 5, 3))
+  Valores[2] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem[0], 9, 3))
+  Valores[3] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem[0], 13, 3))
+  Valores[4] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem[0], 17, 3))
+  Valores[5] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem[0], 21, 3))
+  Valores[6] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem[1], 1, 3))
+  Valores[7] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem[1], 5, 3))
+  Valores[8] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem[1], 9, 3))
+  Valores[9] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem[1], 13, 3))
+  Valores[10] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem[1], 17, 3))
+  Valores[11] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem[1], 21, 3))
 EndSub
 
 
@@ -47,9 +54,15 @@ EndSub
 Sub ATUALIZARCORES
   For PortaCor = 1 To 4 Step 3
     Leitura = Sensor.ReadRaw(PortaCor, 3)
-    Leitura[0] = (100*Leitura[0] - 100*Valores[3])/(Valores[0] - Valores[3])
-    Leitura[1] = (100*Leitura[1] - 100*Valores[4])/(Valores[1] - Valores[4])
-    Leitura[2] = (100*Leitura[2] - 100*Valores[5])/(Valores[2] - Valores[5])
+    If PortaCor = 1 Then
+      Leitura[0] = (100*Leitura[0] - 100*Valores[3])/(Valores[0] - Valores[3])
+      Leitura[1] = (100*Leitura[1] - 100*Valores[4])/(Valores[1] - Valores[4])
+      Leitura[2] = (100*Leitura[2] - 100*Valores[5])/(Valores[2] - Valores[5])
+    Else
+      Leitura[0] = (100*Leitura[0] - 100*Valores[9])/(Valores[6] - Valores[9])
+      Leitura[1] = (100*Leitura[1] - 100*Valores[10])/(Valores[7] - Valores[10])
+      Leitura[2] = (100*Leitura[2] - 100*Valores[11])/(Valores[8] - Valores[11])
+    EndIf
     Media = (Leitura[0] + Leitura[1] + Leitura[2])/3
     If Media < 0 Then
       Media = 0 
