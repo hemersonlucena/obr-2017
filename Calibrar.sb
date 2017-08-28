@@ -12,32 +12,32 @@ Sensor.SetMode(4, 4)
 
 Sub LER
   While LerControle
-    Leitura = Sensor.ReadRaw(PortaCor, 3)
     LCD.StopUpdate()
     LCD.Clear()
-    LCD.Write(30, 0, String)
-    LCD.Write(30, 20, Leitura[0])
-    LCD.Write(30, 30, Leitura[1])
-    LCD.Write(30, 40, Leitura[2])
+    LCD.Write(30, 50, String)
+    
+    Leitura = Sensor.ReadRaw(1, 3)
+    LCD.Write(20, 60, "SENSOR 1")
+    LCD.Write(20, 70, Leitura[0])
+    LCD.Write(20, 80, Leitura[1])
+    LCD.Write(20, 90, Leitura[2])
+    
+    LeituraAux = Sensor.ReadRaw(4, 3)
+    Leitura[3] = LeituraAux[0]
+    Leitura[4] = LeituraAux[1]
+    Leitura[5] = LeituraAux[2]
+    LCD.Write(110, 60, "SENSOR 4")
+    LCD.Write(110, 70, Leitura[3])
+    LCD.Write(110, 80, Leitura[4])
+    LCD.Write(110, 90, Leitura[5])
+    
     LCD.Update()
-    Program.Delay(200)
   EndWhile
 EndSub
 
 'INÍCIO
-PortaCor = 1
-String = "S1: VALOR MAXIMO"
-Thread.Run = LER
-Buttons.Wait()
-Buttons.Flush()
-LerControle = "False"
-Program.Delay(200)
-Valores[0] = Leitura[0]
-Valores[1] = Leitura[1]
-Valores[2] = Leitura[2]
-
-String = "S1: VALOR MINIMO"
-LerControle = "True"
+String = "VALOR MINIMO"
+EV3.SetLEDColor("ORANGE", "NORMAL")
 Thread.Run = LER
 Buttons.Wait()
 Buttons.Flush()
@@ -46,36 +46,35 @@ Program.Delay(200)
 Valores[3] = Leitura[0]
 Valores[4] = Leitura[1]
 Valores[5] = Leitura[2]
+Valores[9] = Leitura[3]
+Valores[10] = Leitura[4]
+Valores[11] = Leitura[5]
 
-PortaCor = 4
-String = "S4: VALOR MAXIMO"
+String = "VALOR MAXIMO"
+EV3.SetLEDColor("RED", "NORMAL")
 LerControle = "True"
 Thread.Run = LER
 Buttons.Wait()
 Buttons.Flush()
 LerControle = "False"
 Program.Delay(200)
-Valores[6] = Leitura[0]
-Valores[7] = Leitura[1]
-Valores[8] = Leitura[2]
-
-String = "S4: VALOR MINIMO"
-LerControle = "True"
-Thread.Run = LER
-Buttons.Wait()
-Buttons.Flush()
-LerControle = "False"
-Program.Delay(200)
-Valores[9] = Leitura[0]
-Valores[10] = Leitura[1]
-Valores[11] = Leitura[2]
+Valores[0] = Leitura[0]
+Valores[1] = Leitura[1]
+Valores[2] = Leitura[2]
+Valores[6] = Leitura[3]
+Valores[7] = Leitura[4]
+Valores[8] = Leitura[5]
 
 Arquivo = EV3File.OpenWrite("OBR/legonautas")
 
 For i = 0 To 11
   Saida[i] = Valores[i] + ""
   If Text.GetLength(Saida[i]) < 3 Then
-    Saida[i] = "0" + Valores[i]
+    If Text.GetLength(Saida[i]) < 2 Then
+      Saida[i] = "00" + Valores[i]
+    Else
+      Saida[i] = "0" + Valores[i]
+    EndIf
   EndIf
 EndFor
 EV3File.WriteLine(Arquivo, (Saida[0] + ";" + Saida[1] + ";" + Saida[2] + ";" + Saida[3] + ";" + Saida[4] + ";" + Saida[5] + ";"))
