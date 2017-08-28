@@ -7,8 +7,14 @@ Sensor.SetMode(3, 0)
 
 'VARIÁVEIS
 MutexPiloto = Thread.CreateMutex()
+MutexRampa = Thread.CreateMutex()
 NaRampa = "False"
+FatorAlinhar = 1
 ForcaPadrao = -45
+ForcaObstaculo = -20
+
+AberturaObstaculo = 500 'Valor em graus para abertura no desviar após o sensor lateral deixar de detectar o obstáculo
+ProfundidadeObstaculo = 750
 
 
 'VARIÁVEIS INICIALIZADAS
@@ -148,11 +154,88 @@ EndSub
 
 Sub RAMPA
   While "True"
+    Thread.Lock(MutexRampa)
     If Sensor.ReadRawValue(2, 0) < 80 Then
       Program.Delay(750)
       If Sensor.ReadRawValue(2, 0) < 80 Then
         NaRampa = "True"
       EndIf
+    EndIf
+    Thread.Unlock(MutexRampa)
+  EndWhile
+EndSub
+
+
+Sub ALINHAR
+  ATUALIZARCORES()
+  AlinharInicio = EV3.Time
+  While MediaE < 62 Or MediaE > 78 Or MediaD < 62 Or MediaD > 78 Or EV3.Time < AlinharInicio + 4000
+    EV3.SetLEDColor("RED", "NORMAL")
+    AlinharForcaE = (Math.Power(MediaE, 2) - 5000)/5000
+    AlinharForcaD = (Math.Power(MediaD, 2) - 5000)/5000
+    AlinharForcaE = AlinharForcaE*ForcaObstaculo
+    AlinharForcaD = AlinharForcaD*ForcaObstaculo
+    If AlinharForcaE > -12 Or AlinharForcaE < 12 Then
+      If AlinharForcaE < 0 Then
+        AlinharForcaE = -12
+      Else
+        AlinharForcaE = 12
+      EndIf
+    EndIf
+    If AlinharForcaD > -12 Or AlinharForcaD < 12 Then
+      If AlinharForcaD < 0 Then
+        AlinharForcaD = -12
+      Else
+        AlinharForcaD = 12
+      EndIf
+    EndIf
+    Motor.StartPower("B", AlinharForcaE*FatorAlinhar)
+    Motor.StartPower("C", AlinharForcaD*FatorAlinhar)
+    ATUALIZARCORES()
+  EndWhile
+EndSub
+
+
+Sub MONITORAROBSTACULO
+  While "True"
+    If Sensor.ReadRawValue(3, 0) < 40 Then
+      'SOLICITA CONTROLE E PARA O ROBÔ
+      Thread.Lock(MutexPiloto)
+      Motor.Stop("BC", "True")
+      
+      'DESATIVA O MONITORAMENTO DE RAMPA COM O SENSOR LATERAL
+      Thread.Lock(MutexRampa)
+      
+      'GIRA 90º PARA A DIREITA E ALINHA DE RÉ
+      Motor.MoveSync("BC", -30, 30, 193, "True")
+      FatorAlinhar = -1
+      ALINHAR()
+      Motor.Stop("BC", "True")
+      
+      'MOVE-SE DURANTE A QUANTIDADE DE GRAUS ESPECIFICADA EM AberturaObstaculo
+      Motor.MoveSync("BC", ForcaObstaculo, ForcaObstaculo, AberturaObstaculo, "True")
+      
+      'GIRA 90º PARA A ESQUERDA, FICANDO PARALELO AO TRAJETO
+      Motor.MoveSync("BC", 30, -30, 205, "True")
+      
+      'MOVE-SE DURANTE A QUANTIDADE DE GRAUS ESPECIFICADA EM ProfundidadeObstaculo
+      Motor.MoveSync("BC", ForcaObstaculo, ForcaObstaculo, ProfundidadeObstaculo, "True")
+      
+      'GIRA 60º PARA A ESQUERDA, DIRECIONANDO AO TRAJETO
+      Motor.MoveSync("BC", 30, -30, 137, "True")
+      
+      'MOVE O ROBOÔ EM DIREÇÃO AO TRAJETO
+      Motor.MoveSync("BC", ForcaObstaculo, ForcaObstaculo, AberturaObstaculo/1.1, "True")
+      
+      'GIRA 60º PARA A DIREITA, FICANDO EM CIMA DO TRAJETO
+      Motor.MoveSync("BC", -30, 30, 137, "True")
+      
+      'MOVE-SE  PARA TRÁS COM POUQUÍSSIMA FORÇA DURANTE 5s
+      Motor.StartPower("BC", -3*ForcaObstaculo/4)
+      Program.Delay(5000)
+      
+      Thread.Unlock(MutexRampa)
+      Thread.Unlock(MutexPiloto)
     EndIf
   EndWhile
 EndSub
@@ -170,6 +253,7 @@ EndSub
 'INICIO
 ATUALIZARCALIBRAGEM()
 Thread.Run = SEGUIRLINHA
+Thread.Run = MONITORAROBSTACULO
 Thread.Run = RAMPA
 While "True"
   Program.Delay(1000)
