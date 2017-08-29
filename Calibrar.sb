@@ -3,8 +3,6 @@ LerControle = "True"
 Valores[0] = 0
 String = ""
 PortaCor = 0
-'OS VALORES SÃO INDICADOS NA SEGUINTE ORDEM:
-'REDMIN(0), GREENMIN(1), BLUEMIN(2), REDMAX(3), GREENMAX(4), BLUEMAX(5)
 
 Leitura[0] = 0
 Sensor.SetMode(1, 4)

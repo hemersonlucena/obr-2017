@@ -1,35 +1,45 @@
 'SETUP
+'Inicializa os sensores de cor no modo RGB.
 Sensor.SetMode(4, 4)
 Sensor.SetMode(1, 4)
+
+'Inicializa os sensores ultrassônicos no modo milímetros.
 Sensor.SetMode(2, 0)
 Sensor.SetMode(3, 0)
 
 
-'VARIÁVEIS
-MutexPiloto = Thread.CreateMutex()
-MutexRampa = Thread.CreateMutex()
-NaRampa = "False"
-FatorAlinhar = 1
-ForcaPadrao = -45
-ForcaObstaculo = -20
+'VARIÁVEIS - aqui são inicializadas variáveis com valores significativos.
+MutexPiloto = Thread.CreateMutex() 'Mutex utilizado para o controle de movimento do robô.
+MutexRampa = Thread.CreateMutex() 'Mutex utilizado para o controle da procura pela rampa.
+NaRampa = "False" 'Variável de controle para o seguir linha determinar se  o robô está na rampa ou não.
+ForcaPadrao = -45 'Força padrão utilizada na maioria dos movimentos do robô.
+ForcaObstaculo = -20 'Força utilizada em movimentos precisos no desviar.
+DireitaObstaculo = "True" 'Se verdadeira, o desviar é feito pela direita. Caso contrário, pela esquerda.
+AberturaObstaculo = 500 'Valor em graus para abertura no desviar.
+ProfundidadeObstaculo = 750 'Valor em graus para deslocamento no desviar.
 
-AberturaObstaculo = 500 'Valor em graus para abertura no desviar após o sensor lateral deixar de detectar o obstáculo
-ProfundidadeObstaculo = 750
 
-
-'VARIÁVEIS INICIALIZADAS
+'VARIÁVEIS INICIALIZADAS - aqui são inicializadas variáveis sem valor significativo. Seus valores são definidos ao longo do programa.
 ForcaD = 0
 ForcaE = 0
 MediaD = 0
 MediaE = 0
+FatorAlinhar = 1
 
 
 'FUNÇÕES
 Sub ATUALIZARCALIBRAGEM
+  'Abre o arquivo de texto OBR/legonautas que contém os valores gravados pelo Calibrar.sb
   Handle = EV3File.OpenRead("OBR/legonautas")
-  Calibragem[0] = EV3File.ReadLine(Handle)'Linha 1 -> sensor esquerdo
-  Calibragem[1] = EV3File.ReadLine(Handle)'Linha 2 -> sensor direito
+  
+  'Lê os valores mínimos e máximos para os sesores esquerdo e direito respectivamente.
+  Calibragem[0] = EV3File.ReadLine(Handle)  'Linha 1 -> sensor esquerdo
+  Calibragem[1] = EV3File.ReadLine(Handle)  'Linha 2 -> sensor direito
+  
+  'Fecha o arquivo de texto pois os valores necessários já foram lidos e gravados em variáveis.
   EV3File.Close(Handle)
+  
+  'Quebra o texto lido do arquivo e os transfora em valores inteiros para serem usados no programa.
   Valores[0] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem[0], 1, 3))
   Valores[1] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem[0], 5, 3))
   Valores[2] = EV3File.ConvertToNumber(Text.GetSubText(Calibragem[0], 9, 3))
@@ -46,9 +56,18 @@ EndSub
 
 
 Sub SEGUIRLINHA
-  While "True"
+  While "True"    
+    'Atualiza as variáveis MediaE e MediaD de acordo com os sensores
+    'esquerdo (porta 1) e direito (porta 2).
     ATUALIZARCORES()
+    
+    'Faz o cálculo das variáveis ForcaE e ForcaD de acordo com a diferença
+    'entre os valores MediaE e MediaD.
     CALCULARFORCAS()
+    
+    'Solicita controle dos motores de movimento, movimenta o robô
+    'de acordo com as variáveis de força calculadas anteriormente e
+    'libera o controle dos motores de movimento.
     Thread.Lock(MutexPiloto)
     Motor.StartPower("B", ForcaE)
     Motor.StartPower("C", ForcaD)
@@ -58,8 +77,13 @@ EndSub
 
 
 Sub ATUALIZARCORES
+  'Loop for que é executado duas vezes, alternando a variável PortaCor entre 1 e 4.
   For PortaCor = 1 To 4 Step 3
+    
+    'Lê os valores do sensor de RGB.
     Leitura = Sensor.ReadRaw(PortaCor, 3)
+    
+    'Utiliza os valores de calibragem de acordo com o sensor usado.
     If PortaCor = 1 Then
       Leitura[0] = (100*Leitura[0] - 100*Valores[3])/(Valores[0] - Valores[3])
       Leitura[1] = (100*Leitura[1] - 100*Valores[4])/(Valores[1] - Valores[4])
@@ -69,49 +93,62 @@ Sub ATUALIZARCORES
       Leitura[1] = (100*Leitura[1] - 100*Valores[10])/(Valores[7] - Valores[10])
       Leitura[2] = (100*Leitura[2] - 100*Valores[11])/(Valores[8] - Valores[11])
     EndIf
+    
+    'Calcula a média entre os valores de RGB e a limita entre 0 e 100.
     Media = (Leitura[0] + Leitura[1] + Leitura[2])/3
     If Media < 0 Then
       Media = 0 
     ElseIf Media > 100 Then
       Media = 100
     EndIf
+    
+    'Manipulação matemática dos valores para que o seguir linha considere a marcação verde como branca
+    'e não desvie dela.
     If Media <= 90 And Leitura[1] > Leitura[0] Then
       Media = Media + Math.Abs(Leitura[1] - Leitura[0])*13/2
       If Media > 85 Then
         Media = 85
       EndIf
     EndIf
+    
+    'Salva o valor da média na sua respectiva variável de acordo com a porta usada para leitura.
     If PortaCor = 1 Then
       MediaE = Media
     Else
       MediaD = Media
     EndIf
+    
+  'Verifica se o sensor atual está na marcação verde.
+  'Se algum estiver, faz as ações necessárias para virar corretamente na encruzilhada.
   VERIFICARVERDE()
   EndFor
+  
+  'Função utilizada para depuração. Mostra na tela os valores lidos pelo sensor de cor, assim como as médias calculadas.
   MOSTRARMEDIAS()
 EndSub
 
 
 Sub VERIFICARVERDE
-  Bool3 = Leitura[0] < 5 And Leitura[1] > 10
-  Bool4 = Leitura[0] < 5 And (Leitura[1] - Leitura[0]) > 6
-  If Bool3 Then
-    EV3.SetLEDColor("RED", "NORMAL")
-  ElseIf Bool4 Then
-    EV3.SetLEDColor("GREEN", "NORMAL")
-  EndIf
-  If Bool3 Or Bool4 Then
+  Bool1 = Leitura[0] < 5 And Leitura[1] > 10
+  Bool2 = Leitura[0] < 5 And (Leitura[1] - Leitura[0]) > 6
+  
+  'Se o sensor estivver sobre a marcação verde, solicita o controle de movimento,
+  'altera a cor do LED para vermelho, faz a curva para o lado do sensor
+  'e libera o controle de movimento.
+  If Bool1 Or Bool2 Then
     Thread.Lock(MutexPiloto)
-    'EV3.SetLEDColor("RED", "NORMAL")
+    EV3.SetLEDColor("RED", "NORMAL")
     CURVAVERDE()
-    'EV3.SetLEDColor("GREEN", "NORMAL")
     Thread.Unlock(MutexPiloto)
   EndIf
 EndSub
 
 
 Sub CURVAVERDE
+  'Move-se para frente.
   Motor.MoveSync("BC", -40, -40, 180, "True")
+  
+  'Gira 90º para a esquerda ou direita de acordo com o sensor que detectou a marcação verde.
   If PortaCor = 1 Then
     Motor.MoveSync("BC", 40, -40, 193, "True")
   Else
@@ -122,13 +159,17 @@ EndSub
 
 Sub CALCULARFORCAS
     EV3.SetLEDColor("ORANGE", "NORMAL")
-    Diferenca = MediaE - MediaD
     ForcaE = ForcaPadrao
     ForcaD = ForcaPadrao
+    Diferenca = MediaE - MediaD
     Subtrair = ForcaPadrao*Math.Abs(Diferenca/15)
+    
+    'Limita a força utilizada em movimentos para trás em 80% da força padrão.
     If Subtrair/ForcaPadrao > 1.8 Then
       Subtrair =  1.8*ForcaPadrao
     EndIf
+    
+    'Diminui o valor da força no sensor que teve o menor valor de leitura.
     If Diferenca <= 0 Then
       ForcaE = ForcaE - Subtrair
     Else
@@ -136,14 +177,17 @@ Sub CALCULARFORCAS
     EndIf
 
     If NaRampa Then
-      If ForcaE < ForcaD Then 'FORÇA MÁXIMA NA RAMPA
+      'Efeito correspondente a 'aumentar' a força padrão para -75.
+      If ForcaE < ForcaD Then
         ForcaD = -75*ForcaD/ForcaE
         ForcaE = -75
       Else
         ForcaE = -75*ForcaE/ForcaD
         ForcaD = -75
       EndIf
-      If ForcaE > 0 Then 'NÃO EXISTE MOVIMENTO CONTRÁRIO NA RAMPA
+      
+      'Qualquer movimento contrário durante a rampa deixa de exister. O motor apenas para.
+      If ForcaE > 0 Then
         ForcaE = 0
       ElseIf ForcaD > 0 Then
         ForcaD = 0
@@ -154,27 +198,46 @@ EndSub
 
 Sub RAMPA
   While "True"
+    'Solicita controle para monitorar a rampa.
     Thread.Lock(MutexRampa)
+    
+    'Se o sensor ultrassônico lateral detectar uma distância menor que 8cm
+    'durante 750ms, determina-se que o robô está na rampa.
     If Sensor.ReadRawValue(2, 0) < 80 Then
       Program.Delay(750)
       If Sensor.ReadRawValue(2, 0) < 80 Then
         NaRampa = "True"
       EndIf
     EndIf
+    
+    'Libera o controle de monitoramento de rampa.
     Thread.Unlock(MutexRampa)
   EndWhile
 EndSub
 
 
 Sub ALINHAR
+  
+  'Atualiza as variáveis MediaE e MediaD para controlar o alinhamento.
   ATUALIZARCORES()
+  
+  'Faz com que o alinhar dure pelo menos 4s.
   AlinharInicio = EV3.Time
   While MediaE < 62 Or MediaE > 78 Or MediaD < 62 Or MediaD > 78 Or EV3.Time < AlinharInicio + 4000
     EV3.SetLEDColor("RED", "NORMAL")
+    
+    'Calcula um fator a ser multiplicado pela força de acordo com os valores MediaE
+    'e MediaD. O valor varia entre -1 e 1.
     AlinharForcaE = (Math.Power(MediaE, 2) - 5000)/5000
     AlinharForcaD = (Math.Power(MediaD, 2) - 5000)/5000
-    AlinharForcaE = AlinharForcaE*ForcaObstaculo
-    AlinharForcaD = AlinharForcaD*ForcaObstaculo
+    
+    'Multiplica o valor caculado anteriormente pela força e pelo FatorAlinhar.
+    'Se o FatorAlinhar for positivo, o robô procurará uma linha na sua frente. Caso contrário,
+    'a linha deve estar atrás.
+    AlinharForcaE = AlinharForcaE*ForcaObstaculo*FatorAlinhar
+    AlinharForcaD = AlinharForcaD*ForcaObstaculo*FatorAlinhar
+    
+    'Define a força minima dos motores como 12 em ambos os sentidos.
     If AlinharForcaE > -12 Or AlinharForcaE < 12 Then
       If AlinharForcaE < 0 Then
         AlinharForcaE = -12
@@ -189,8 +252,12 @@ Sub ALINHAR
         AlinharForcaD = 12
       EndIf
     EndIf
+    
+    'Move os motores de acordo.
     Motor.StartPower("B", AlinharForcaE*FatorAlinhar)
     Motor.StartPower("C", AlinharForcaD*FatorAlinhar)
+    
+    'Atualiza os valores de média ao fim de cada loop.
     ATUALIZARCORES()
   EndWhile
 EndSub
@@ -199,40 +266,60 @@ EndSub
 Sub MONITORAROBSTACULO
   While "True"
     If Sensor.ReadRawValue(3, 0) < 40 Then
-      'SOLICITA CONTROLE E PARA O ROBÔ
+      'Solicita o controle de movimento.
       Thread.Lock(MutexPiloto)
       Motor.Stop("BC", "True")
       
-      'DESATIVA O MONITORAMENTO DE RAMPA COM O SENSOR LATERAL
+      'Bloqueia o monitoramento da rampa.
       Thread.Lock(MutexRampa)
       
-      'GIRA 90º PARA A DIREITA E ALINHA DE RÉ
-      Motor.MoveSync("BC", -30, 30, 193, "True")
+      'Gira 90º para direita se DireitaObstáculo for verdadeira.
+      'Caso contrário, gira para a esquerda.
+      If DireitaObstaculo Then
+        Motor.MoveSync("BC", -30, 30, 193, "True")
+      Else
+        Motor.MoveSync("BC", 30, -30, 193, "True")
+      EndIf
+      
+      'Alinha o roboô com a linha que encontra-se atrás de seus sensores.
       FatorAlinhar = -1
       ALINHAR()
       Motor.Stop("BC", "True")
       
-      'MOVE-SE DURANTE A QUANTIDADE DE GRAUS ESPECIFICADA EM AberturaObstaculo
+      'Move-se para frente durante a quantidade de graus especificada em AberturaObstaculo.
       Motor.MoveSync("BC", ForcaObstaculo, ForcaObstaculo, AberturaObstaculo, "True")
       
-      'GIRA 90º PARA A ESQUERDA, FICANDO PARALELO AO TRAJETO
-      Motor.MoveSync("BC", 30, -30, 205, "True")
+      'Gira 90º no sentido contrário agora, ficando paralelo ao trajeto.
+      If DireitaObstaculo Then
+        Motor.MoveSync("BC", 30, -30, 205, "True")
+      Else
+        Motor.MoveSync("BC", -30, 30, 205, "True")
+      EndIf
       
-      'MOVE-SE DURANTE A QUANTIDADE DE GRAUS ESPECIFICADA EM ProfundidadeObstaculo
+      'Move-se para frente durante a quantidade de graus especificada em ProfundidadeObstaculo.
       Motor.MoveSync("BC", ForcaObstaculo, ForcaObstaculo, ProfundidadeObstaculo, "True")
       
-      'GIRA 60º PARA A ESQUERDA, DIRECIONANDO AO TRAJETO
-      Motor.MoveSync("BC", 30, -30, 137, "True")
+      'Gira 60º em direção ao trajeto
+      If DireitaObstaculo Then
+        Motor.MoveSync("BC", 30, -30, 137, "True")
+      Else
+        Motor.MoveSync("BC", -30, 30, 137, "True")
+      EndIf
       
-      'MOVE O ROBOÔ EM DIREÇÃO AO TRAJETO
+      'Move-se para frente em direção ao trajeto
       Motor.MoveSync("BC", ForcaObstaculo, ForcaObstaculo, AberturaObstaculo/1.1, "True")
       
-      'GIRA 60º PARA A DIREITA, FICANDO EM CIMA DO TRAJETO
-      Motor.MoveSync("BC", -30, 30, 137, "True")
+      'Gira 60º no sentido contrário agora, ficando paralelo ao trajeto novamente.
+      If DireitaObstaculo Then
+        Motor.MoveSync("BC", -30, 30, 137, "True")
+      Else
+        Motor.MoveSync("BC", 30, -30, 137, "True")
+      EndIf
       
-      'MOVE-SE  PARA TRÁS COM POUQUÍSSIMA FORÇA DURANTE 5s
+      'Move-se para trás com pouquíssima força durante 5s.
       Motor.StartPower("BC", -3*ForcaObstaculo/4)
       Program.Delay(5000)
+      Motor.Stop("BC", "True")
       
       Thread.Unlock(MutexRampa)
       Thread.Unlock(MutexPiloto)
@@ -251,10 +338,16 @@ EndSub
 
 
 'INICIO
+
+'Lê o arquivo de calibragem e salva os valores necesários em variáveis.
 ATUALIZARCALIBRAGEM()
+
+'Inicia os módulos.
 Thread.Run = SEGUIRLINHA
 Thread.Run = MONITORAROBSTACULO
 Thread.Run = RAMPA
+
+'Deixa o thread principal vivo.
 While "True"
   Program.Delay(1000)
 EndWhile
