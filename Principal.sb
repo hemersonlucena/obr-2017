@@ -147,14 +147,16 @@ EndSub
 
 Sub CURVAVERDE
   'Move-se para frente.
-  Motor.MoveSync("BC", -40, -40, 180, "True")
+  Motor.MoveSync("BC", -40, -40, 200, "True")
   
   'Gira 90º para a esquerda ou direita de acordo com o sensor que detectou a marcação verde.
   If PortaCor = 1 Then
-    Motor.MoveSync("BC", 40, -40, 193, "True")
+    Motor.MoveSync("BC", 40, -40, 875, "True")
   Else
-    Motor.MoveSync("BC", -40, 40, 193, "True")
+    Motor.MoveSync("BC", -40, 40, 875, "True")
   EndIf
+  'Move-se para frente para distanciar-se da marcação verde.
+  Motor.Move("BC", -40, 600, "True")
 EndSub
 
 
@@ -353,7 +355,7 @@ ATUALIZARCALIBRAGEM()
 'Inicia os módulos.
 Thread.Run = SEGUIRLINHA
 Thread.Run = MONITORAROBSTACULO
-Thread.Run = RAMPA
+'Thread.Run = RAMPA
 
 'Deixa o thread principal vivo.
 While "True"
