@@ -147,13 +147,13 @@ EndSub
 
 Sub CURVAVERDE
   'Move-se para frente.
-  Motor.MoveSync("BC", -40, -40, 180, "True")
+  Motor.MoveSync("BC", -40, -40, 500, "True")
   
   'Gira 90º para a esquerda ou direita de acordo com o sensor que detectou a marcação verde.
   If PortaCor = 1 Then
-    Motor.MoveSync("BC", 40, -40, 193, "True")
+    Motor.MoveSync("BC", 40, -40, 1050, "True")
   Else
-    Motor.MoveSync("BC", -40, 40, 193, "True")
+    Motor.MoveSync("BC", -40, 40, 1050, "True")
   EndIf
 EndSub
 
