@@ -9,6 +9,7 @@ Sensor.SetMode(3, 0)
 
 
 'VARIÁVEIS - aqui são inicializadas variáveis com valores significativos.
+ComprimentoDoRobo = 220 'Comprimento do robô em milímetros.
 MutexPiloto = Thread.CreateMutex() 'Mutex utilizado para o controle de movimento do robô.
 MutexRampa = Thread.CreateMutex() 'Mutex utilizado para o controle da procura pela rampa.
 NaRampa = "False" 'Variável de controle para o seguir linha determinar se  o robô está na rampa ou não.
@@ -118,9 +119,9 @@ Sub ATUALIZARCORES
       MediaD = Media
     EndIf
     
-  'Verifica se o sensor atual está na marcação verde.
-  'Se algum estiver, faz as ações necessárias para virar corretamente na encruzilhada.
-  VERIFICARVERDE()
+    'Verifica se o sensor atual está na marcação verde.
+    'Se algum estiver, faz as ações necessárias para virar corretamente na encruzilhada.
+    VERIFICARVERDE()
   EndFor
   
   'Função utilizada para depuração. Mostra na tela os valores lidos pelo sensor de cor, assim como as médias calculadas.
@@ -158,41 +159,41 @@ EndSub
 
 
 Sub CALCULARFORCAS
-    EV3.SetLEDColor("ORANGE", "NORMAL")
-    ForcaE = ForcaPadrao
-    ForcaD = ForcaPadrao
-    Diferenca = MediaE - MediaD
-    Subtrair = ForcaPadrao*Math.Abs(Diferenca/15)
-    
-    'Limita a força utilizada em movimentos para trás em 80% da força padrão.
-    If Subtrair/ForcaPadrao > 1.8 Then
-      Subtrair =  1.8*ForcaPadrao
-    EndIf
-    
-    'Diminui o valor da força no sensor que teve o menor valor de leitura.
-    If Diferenca <= 0 Then
-      ForcaE = ForcaE - Subtrair
+  EV3.SetLEDColor("ORANGE", "NORMAL")
+  ForcaE = ForcaPadrao
+  ForcaD = ForcaPadrao
+  Diferenca = MediaE - MediaD
+  Subtrair = ForcaPadrao*Math.Abs(Diferenca/15)
+  
+  'Limita a força utilizada em movimentos para trás em 80% da força padrão.
+  If Subtrair/ForcaPadrao > 1.8 Then
+    Subtrair =  1.8*ForcaPadrao
+  EndIf
+  
+  'Diminui o valor da força no sensor que teve o menor valor de leitura.
+  If Diferenca <= 0 Then
+    ForcaE = ForcaE - Subtrair
+  Else
+    ForcaD = ForcaD - Subtrair
+  EndIf
+  
+  If NaRampa Then
+    'Efeito correspondente a 'aumentar' a força padrão para -75.
+    If ForcaE < ForcaD Then
+      ForcaD = -75*ForcaD/ForcaE
+      ForcaE = -75
     Else
-      ForcaD = ForcaD - Subtrair
+      ForcaE = -75*ForcaE/ForcaD
+      ForcaD = -75
     EndIf
-
-    If NaRampa Then
-      'Efeito correspondente a 'aumentar' a força padrão para -75.
-      If ForcaE < ForcaD Then
-        ForcaD = -75*ForcaD/ForcaE
-        ForcaE = -75
-      Else
-        ForcaE = -75*ForcaE/ForcaD
-        ForcaD = -75
-      EndIf
-      
-      'Qualquer movimento contrário durante a rampa deixa de exister. O motor apenas para.
-      If ForcaE > 0 Then
-        ForcaE = 0
-      ElseIf ForcaD > 0 Then
-        ForcaD = 0
-      EndIf
+    
+    'Qualquer movimento contrário durante a rampa deixa de exister. O motor apenas para.
+    If ForcaE > 0 Then
+      ForcaE = 0
+    ElseIf ForcaD > 0 Then
+      ForcaD = 0
     EndIf
+  EndIf
 EndSub
 
 
@@ -207,6 +208,13 @@ Sub RAMPA
       Program.Delay(750)
       If Sensor.ReadRawValue(2, 0) < 80 Then
         NaRampa = "True"
+        While Sensor.ReadRawValue(2, 0) < 150
+        EndWhile
+        Thread.Lock(MutexPiloto)
+        Motor.Stop("BC", "True")
+        Program.Delay(5000)
+        Program.End()
+        Thread.Unlock(MutexPiloto)
       EndIf
     EndIf
     
@@ -254,8 +262,8 @@ Sub ALINHAR
     EndIf
     
     'Move os motores de acordo.
-    Motor.StartPower("B", AlinharForcaE*FatorAlinhar)
-    Motor.StartPower("C", AlinharForcaD*FatorAlinhar)
+    Motor.StartPower("B", AlinharForcaE)
+    Motor.StartPower("C", AlinharForcaD)
     
     'Atualiza os valores de média ao fim de cada loop.
     ATUALIZARCORES()
