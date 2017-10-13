@@ -7,7 +7,6 @@ Sensor.SetMode(1, 4)
 Sensor.SetMode(2, 0)
 Sensor.SetMode(3, 0)
 
-
 'VARIÁVEIS - aqui são inicializadas variáveis com valores significativos.
 ComprimentoDoRobo = 220 'Comprimento do robô em milímetros.
 MutexPiloto = Thread.CreateMutex() 'Mutex utilizado para o controle de movimento do robô.
@@ -19,16 +18,37 @@ DireitaObstaculo = "True" 'Se verdadeira, o desviar é feito pela direita. Caso 
 AberturaObstaculo = 500 'Valor em graus para abertura no desviar.
 ProfundidadeObstaculo = 750 'Valor em graus para deslocamento no desviar.
 
-
 'VARIÁVEIS INICIALIZADAS - aqui são inicializadas variáveis sem valor significativo. Seus valores são definidos ao longo do programa.
 ForcaD = 0
 ForcaE = 0
 MediaD = 0
 MediaE = 0
+RGBD[0] = 0
+RGBE[0] = 0
+NoVerde[0] = "False"
+NoVerde[1] = "False"
 FatorAlinhar = 1
+RESETARAMOSTRAS()
 
 
 'FUNÇÕES
+Sub RESETARAMOSTRAS
+  For k = 0 To 9
+    Amostras[k] = "False"
+  EndFor
+EndSub
+
+
+Sub ATUALIZARAMOSTRAS
+  For k = 0 To 6 Step 2
+    Amostras[k] = Amostras[k + 2]
+    Amostras[k + 1] = Amostras[k + 3]
+  EndFor
+  Amostras[8] = NoVerde[0]
+  Amostras[9] = NoVerde[1]
+EndSub
+
+
 Sub ATUALIZARCALIBRAGEM
   'Abre o arquivo de texto OBR/legonautas que contém os valores gravados pelo Calibrar.sb
   Handle = EV3File.OpenRead("OBR/legonautas")
@@ -115,14 +135,15 @@ Sub ATUALIZARCORES
     'Salva o valor da média na sua respectiva variável de acordo com a porta usada para leitura.
     If PortaCor = 1 Then
       MediaE = Media
+      RGBE = Leitura
     Else
       MediaD = Media
+      RGBD = Leitura
     EndIf
-    
-    'Verifica se o sensor atual está na marcação verde.
-    'Se algum estiver, faz as ações necessárias para virar corretamente na encruzilhada.
-    VERIFICARVERDE()
   EndFor
+  'Verifica se o sensor atual está na marcação verde.
+  'Se algum estiver, faz as ações necessárias para virar corretamente na encruzilhada.
+  VERIFICARVERDE()
   
   'Função utilizada para depuração. Mostra na tela os valores lidos pelo sensor de cor, assim como as médias calculadas.
   MOSTRARMEDIAS()
@@ -130,33 +151,65 @@ EndSub
 
 
 Sub VERIFICARVERDE
-  Bool1 = Leitura[0] < 5 And Leitura[1] > 10
-  Bool2 = Leitura[0] < 5 And (Leitura[1] - Leitura[0]) > 6
+  For j = 0 To 1
+    
+    NoVerde[j] = "False"
+    
+    If j = 0 Then
+      RGBVV = RGBE
+    Else
+      RGBVV = RGBD
+    EndIf
+    
+    Bool1 = RGBVV[0] < 5 And RGBVV[1] > 10
+    Bool2 = RGBVV[0] < 5 And (RGBVV[1] - RGBVV[0]) > 6
+    
+    'Se o sensor estivver sobre a marcação verde, solicita o controle de movimento,
+    'altera a cor do LED para vermelho, faz a curva para o lado do sensor
+    'e libera o controle de movimento.
+    If Bool1 Or Bool2 Then
+      NoVerde[j] = "True"
+    EndIf
+  EndFor
+  ATUALIZARAMOSTRAS()
   
-  'Se o sensor estivver sobre a marcação verde, solicita o controle de movimento,
-  'altera a cor do LED para vermelho, faz a curva para o lado do sensor
-  'e libera o controle de movimento.
-  If Bool1 Or Bool2 Then
+  If Amostras[0] Or Amostras[1] Then
     Thread.Lock(MutexPiloto)
     EV3.SetLEDColor("RED", "NORMAL")
-    CURVAVERDE()
+    CURVAVERDE() 'TODO: depender da amostra
     Thread.Unlock(MutexPiloto)
+  Else
+    BooleanE = "False"
+    BooleanD = "False"
+    For l = 0 To 8 Step 2
+      BooleanE = BooleanE Or Amostras[l]
+      BooleanD = BooleanD Or Amostras[l + 1]
+    EndFor
+    If BooleanE And BooleanD Then
+      EV3.SetLEDColor("OFF", "NORMAL")
+      Motor.Stop("BC", "True")
+      Motor.MoveSync("BC", 40, -40, 1750, "True")
+      Motor.Move("BC", -40, 400, "True")
+      RESETARAMOSTRAS()
+    EndIf
   EndIf
 EndSub
 
 
 Sub CURVAVERDE
+  'Gira 90º para a esquerda ou direita de acordo com o sensor que detectou a marcação verde.
+  
   'Move-se para frente.
   Motor.MoveSync("BC", -40, -40, 200, "True")
   
-  'Gira 90º para a esquerda ou direita de acordo com o sensor que detectou a marcação verde.
-  If PortaCor = 1 Then
+  If Amostras[0] Then
     Motor.MoveSync("BC", 40, -40, 875, "True")
   Else
     Motor.MoveSync("BC", -40, 40, 875, "True")
   EndIf
   'Move-se para frente para distanciar-se da marcação verde.
   Motor.Move("BC", -40, 600, "True")
+  RESETARAMOSTRAS()
 EndSub
 
 
@@ -356,6 +409,7 @@ ATUALIZARCALIBRAGEM()
 Thread.Run = SEGUIRLINHA
 Thread.Run = MONITORAROBSTACULO
 'Thread.Run = RAMPA
+
 
 'Deixa o thread principal vivo.
 While "True"
