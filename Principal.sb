@@ -17,6 +17,7 @@ ForcaObstaculo = -40 'Força utilizada em movimentos precisos no desviar.
 DireitaObstaculo = "True" 'Se verdadeira, o desviar é feito pela direita. Caso contrário, pela esquerda.
 AberturaObstaculo = 1400 'Valor em graus para abertura no desviar.
 ProfundidadeObstaculo = 2500 'Valor em graus para deslocamento no desviar.
+LocalDeSeguranca = 0 '3 possíveis locais em que a área de resgate pode estar.
 
 'VARIÁVEIS INICIALIZADAS - aqui são inicializadas variáveis sem valor significativo. Seus valores são definidos ao longo do programa.
 ForcaD = 0
@@ -400,18 +401,35 @@ Sub MOSTRARMEDIAS
 EndSub
 
 
+Sub SALA3
+  Motor.Move("BC", -60, 3600, "True")
+  If Sensor.ReadRawValue(3, 0) < 10 Then
+    LocalDeSeguranca = 1 
+  Else
+    Motor.Move("BC", -60, 1400, "True")
+    Motor.MoveSync("BC", 30, -30, 800, "True")
+    Motor.Move("BC", -60, 3600, "True")
+    If Sensor.ReadRawValue(3, 0) < 10 Then
+      LocalDeSeguranca = 2
+    Else 
+      LocalDeSeguranca = 3   
+  EndIf
+  Endif
+EndSub
+
+
 'INICIO
 
 'Lê o arquivo de calibragem e salva os valores necesários em variáveis.
 ATUALIZARCALIBRAGEM()
 
 'Inicia os módulos.
-Thread.Run = SEGUIRLINHA
-Thread.Run = MONITORAROBSTACULO
+'Thread.Run = SEGUIRLINHA
+'Thread.Run = MONITORAROBSTACULO
 'Thread.Run = RAMPA
-
+Thread.Run = Sala3
 
 'Deixa o thread principal vivo.
 While "True"
-  Program.Delay(1000)
+  
 EndWhile
