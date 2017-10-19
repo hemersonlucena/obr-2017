@@ -12,7 +12,7 @@ ComprimentoDoRobo = 220 'Comprimento do robô em milímetros.
 MutexPiloto = Thread.CreateMutex() 'Mutex utilizado para o controle de movimento do robô.
 MutexRampa = Thread.CreateMutex() 'Mutex utilizado para o controle da procura pela rampa.
 NaRampa = "False" 'Variável de controle para o seguir linha determinar se  o robô está na rampa ou não.
-ForcaPadrao = -45 'Força padrão utilizada na maioria dos movimentos do robô.
+ForcaPadrao = -60 'Força padrão utilizada na maioria dos movimentos do robô.
 ForcaObstaculo = -20 'Força utilizada em movimentos precisos no desviar.
 DireitaObstaculo = "True" 'Se verdadeira, o desviar é feito pela direita. Caso contrário, pela esquerda.
 AberturaObstaculo = 500 'Valor em graus para abertura no desviar.
@@ -218,7 +218,7 @@ Sub CALCULARFORCAS
   ForcaE = ForcaPadrao
   ForcaD = ForcaPadrao
   Diferenca = MediaE - MediaD
-  Subtrair = ForcaPadrao*Math.Abs(Diferenca/10)
+  Subtrair = ForcaPadrao*Math.Abs(Diferenca/7)
   
   'Limita a força utilizada em movimentos para trás em 80% da força padrão.
   If Subtrair/ForcaPadrao > 2 Then
