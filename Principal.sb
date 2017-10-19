@@ -13,10 +13,10 @@ MutexPiloto = Thread.CreateMutex() 'Mutex utilizado para o controle de movimento
 MutexRampa = Thread.CreateMutex() 'Mutex utilizado para o controle da procura pela rampa.
 NaRampa = "False" 'Variável de controle para o seguir linha determinar se  o robô está na rampa ou não.
 ForcaPadrao = -60 'Força padrão utilizada na maioria dos movimentos do robô.
-ForcaObstaculo = -20 'Força utilizada em movimentos precisos no desviar.
+ForcaObstaculo = -40 'Força utilizada em movimentos precisos no desviar.
 DireitaObstaculo = "True" 'Se verdadeira, o desviar é feito pela direita. Caso contrário, pela esquerda.
-AberturaObstaculo = 500 'Valor em graus para abertura no desviar.
-ProfundidadeObstaculo = 750 'Valor em graus para deslocamento no desviar.
+AberturaObstaculo = 1400 'Valor em graus para abertura no desviar.
+ProfundidadeObstaculo = 2500 'Valor em graus para deslocamento no desviar.
 
 'VARIÁVEIS INICIALIZADAS - aqui são inicializadas variáveis sem valor significativo. Seus valores são definidos ao longo do programa.
 ForcaD = 0
@@ -339,9 +339,9 @@ Sub MONITORAROBSTACULO
       'Gira 90º para direita se DireitaObstáculo for verdadeira.
       'Caso contrário, gira para a esquerda.
       If DireitaObstaculo Then
-        Motor.MoveSync("BC", -30, 30, 193, "True")
+        Motor.MoveSync("BC", -30, 30, 850, "True")
       Else
-        Motor.MoveSync("BC", 30, -30, 193, "True")
+        Motor.MoveSync("BC", 30, -30, 850, "True")
       EndIf
       
       'Alinha o roboô com a linha que encontra-se atrás de seus sensores.
@@ -354,9 +354,9 @@ Sub MONITORAROBSTACULO
       
       'Gira 90º no sentido contrário agora, ficando paralelo ao trajeto.
       If DireitaObstaculo Then
-        Motor.MoveSync("BC", 30, -30, 205, "True")
+        Motor.MoveSync("BC", 30, -30, 850, "True")
       Else
-        Motor.MoveSync("BC", -30, 30, 205, "True")
+        Motor.MoveSync("BC", -30, 30, 850, "True")
       EndIf
       
       'Move-se para frente durante a quantidade de graus especificada em ProfundidadeObstaculo.
@@ -364,9 +364,9 @@ Sub MONITORAROBSTACULO
       
       'Gira 60º em direção ao trajeto
       If DireitaObstaculo Then
-        Motor.MoveSync("BC", 30, -30, 137, "True")
+        Motor.MoveSync("BC", 30, -30, 850, "True")
       Else
-        Motor.MoveSync("BC", -30, 30, 137, "True")
+        Motor.MoveSync("BC", -30, 30, 850, "True")
       EndIf
       
       'Move-se para frente em direção ao trajeto
@@ -374,14 +374,14 @@ Sub MONITORAROBSTACULO
       
       'Gira 60º no sentido contrário agora, ficando paralelo ao trajeto novamente.
       If DireitaObstaculo Then
-        Motor.MoveSync("BC", -30, 30, 137, "True")
+        Motor.MoveSync("BC", -30, 30, 850, "True")
       Else
-        Motor.MoveSync("BC", 30, -30, 137, "True")
+        Motor.MoveSync("BC", 30, -30, 850, "True")
       EndIf
       
       'Move-se para trás com pouquíssima força durante 5s.
       Motor.StartPower("BC", -3*ForcaObstaculo/4)
-      Program.Delay(5000)
+      Program.Delay(1000)
       Motor.Stop("BC", "True")
       
       Thread.Unlock(MutexRampa)
