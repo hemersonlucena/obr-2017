@@ -218,11 +218,11 @@ Sub CALCULARFORCAS
   ForcaE = ForcaPadrao
   ForcaD = ForcaPadrao
   Diferenca = MediaE - MediaD
-  Subtrair = ForcaPadrao*Math.Abs(Diferenca/15)
+  Subtrair = ForcaPadrao*Math.Abs(Diferenca/10)
   
   'Limita a força utilizada em movimentos para trás em 80% da força padrão.
-  If Subtrair/ForcaPadrao > 1.8 Then
-    Subtrair =  1.8*ForcaPadrao
+  If Subtrair/ForcaPadrao > 2 Then
+    Subtrair =  2*ForcaPadrao
   EndIf
   
   'Diminui o valor da força no sensor que teve o menor valor de leitura.
