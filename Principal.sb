@@ -18,6 +18,7 @@ DireitaObstaculo = "True" 'Se verdadeira, o desviar é feito pela direita. Caso 
 AberturaObstaculo = 1400 'Valor em graus para abertura no desviar.
 ProfundidadeObstaculo = 2500 'Valor em graus para deslocamento no desviar.
 LocalDeSeguranca = 0 '3 possíveis locais em que a área de resgate pode estar.
+DistanciaSala3 = 760
 
 'VARIÁVEIS INICIALIZADAS - aqui são inicializadas variáveis sem valor significativo. Seus valores são definidos ao longo do programa.
 ForcaD = 0
@@ -219,7 +220,7 @@ Sub CALCULARFORCAS
   ForcaE = ForcaPadrao
   ForcaD = ForcaPadrao
   Diferenca = MediaE - MediaD
-  Subtrair = ForcaPadrao*Math.Abs(Diferenca/7)
+  Subtrair = ForcaPadrao*Math.Abs(Diferenca/5)
   
   'Limita a força utilizada em movimentos para trás em 80% da força padrão.
   If Subtrair/ForcaPadrao > 2 Then
@@ -402,18 +403,51 @@ EndSub
 
 
 Sub SALA3
-  Motor.Move("BC", -60, 3600, "True")
-  If Sensor.ReadRawValue(3, 0) < 10 Then
-    LocalDeSeguranca = 1 
+  Motor.Move("BC", -60, 3240, "False")
+  Motor.MoveSync("BC", 30, -30, 750, "True")
+  Motor.Move("BC", -60, 1100, "False")
+  Motor.MoveSync("BC", -30, 30, 1300, "True")
+  Program.Delay(250)
+  If Sensor.ReadRawValue(3, 0) < 250 Then
+    For i = 1 To 3
+      Motor.MoveSync("BC", -30, 30, 530, "True")
+      Motor.Move("BC", 30, DistanciaSala3, "True")
+      Motor.MoveSync("BC", 30, -30, 875, "False")
+      Motor.StartPower("D", 10)
+      Program.Delay(500)
+      Motor.Stop("D", "False")
+      Motor.Move("D", 15, 170, "True")
+      Motor.Move("BC", 40, 2000, "False") 'Vai para a parede
+      Motor.Start("BC", 10)
+      Program.Delay(2000)
+      Motor.Stop("BC", "True")
+      Motor.Move("D", -15, 90, "True")
+      Program.Delay(250)
+      Motor.Move("BC", -40, 1400, "False") 'Se afasta da parede
+      If i > 1 Then
+        Motor.MoveSync("BC", 30, -30, 875, "True")
+        Motor.Move("BC", 15, DistanciaSala3 - 760, "True")
+        Motor.MoveSync("BC", -30, 30, 875, "True")
+      EndIf
+      Motor.MoveSync("BC", 30, -30, 1300, "True")
+      Motor.Move("BC", 30, 1850, "False")
+      Motor.Start("D", 45)
+      Program.Delay(200)
+      Motor.Stop("D", "False")
+      Buttons.Wait()
+      
+      DistanciaSala3 = DistanciaSala3 + 600
+    EndFor
   Else
-    Motor.Move("BC", -60, 1400, "True")
-    Motor.MoveSync("BC", 30, -30, 800, "True")
-    Motor.Move("BC", -60, 3600, "True")
-    If Sensor.ReadRawValue(3, 0) < 10 Then
-      LocalDeSeguranca = 2
+    Motor.MoveSync("BC", 30, -30, 1180, "True")
+    Motor.Move("BC", -60, 1750, "False")
+    Motor.MoveSync("BC", -30, 30, 450, "True")
+    Program.Delay(250)
+    If Sensor.ReadRawValue(3, 0) < 200 Then
+      Program.End()
     Else 
-      LocalDeSeguranca = 3   
-  EndIf
+      Motor.StartSync("BC", 30, -30)   
+    EndIf
   Endif
 EndSub
 
