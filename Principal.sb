@@ -26,6 +26,18 @@ RGBE[0] = 0
 NoVerde[0] = "False"
 NoVerde[1] = "False"
 FatorAlinhar = 1
+
+PIDErro = 0
+PIDUltimoErro = 0
+PIDUltimoTempo = 0
+PIDProporcional = 0
+PIDIntegral = 0
+PIDDerivativa = 0
+PIDKp = 1.3
+PIDKi = 0
+PIDKd = 1
+PIDMV = 0
+
 RESETARAMOSTRAS()
 
 
@@ -215,19 +227,26 @@ Sub CALCULARFORCAS
   EV3.SetLEDColor("ORANGE", "NORMAL")
   ForcaE = ForcaPadrao
   ForcaD = ForcaPadrao
-  Diferenca = MediaE - MediaD
-  Subtrair = ForcaPadrao*Math.Abs(Diferenca/7)
+  PIDErro = MediaE - MediaD
+  
+  PIDProporcional = PIDErro
+  PIDIntegral = PIDIntegral + PIDErro * (EV3.Time - PIDUltimoTempo)
+  PIDDerivativa = PIDErro - PIDUltimoErro
+  
+  PIDMV = PIDKp * PIDProporcional + PIDKi * PIDIntegral + PIDKd * PIDDerivativa
+  
+  Subtrair = Math.Abs(PIDMV)
   
   'Limita a força utilizada em movimentos para trás em 80% da força padrão.
-  If Subtrair/ForcaPadrao > 2 Then
-    Subtrair =  2*ForcaPadrao
+  If Math.Abs(Subtrair/ForcaPadrao) > 2 Then
+    Subtrair =  -2*ForcaPadrao
   EndIf
-  
-  'Diminui o valor da força no sensor que teve o menor valor de leitura.
-  If Diferenca <= 0 Then
-    ForcaE = ForcaE - Subtrair
+ 
+  'Diminui o valor da força no sensor que teve o menor valor de leitura. 
+  If PIDMV < 0 Then
+    ForcaE = ForcaE + Subtrair
   Else
-    ForcaD = ForcaD - Subtrair
+    ForcaD = ForcaD + Subtrair
   EndIf
   
 EndSub
@@ -354,6 +373,9 @@ EndSub
 
 'Lê o arquivo de calibragem e salva os valores necesários em variáveis.
 ATUALIZARCALIBRAGEM()
+
+'Define o tempo em que foi iniciado o seguir linha
+PIDUltimoTempo = EV3.Time
 
 'Inicia os módulos.
 Thread.Run = SEGUIRLINHA
