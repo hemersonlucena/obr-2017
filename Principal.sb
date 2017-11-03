@@ -208,7 +208,7 @@ Sub CURVAVERDE
     Motor.MoveSync("BC", -40, 40, 875, "True")
   EndIf
   'Move-se para frente para distanciar-se da marcação verde.
-  Motor.Move("BC", -40, 600, "True")
+  Motor.Move("BC", -40, 250, "True")
   RESETARAMOSTRAS()
 EndSub
 
