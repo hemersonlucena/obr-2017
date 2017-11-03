@@ -33,9 +33,9 @@ PIDUltimoTempo = 0
 PIDProporcional = 0
 PIDIntegral = 0
 PIDDerivativa = 0
-PIDKp = 1.3
+PIDKp = 2.6
 PIDKi = 0
-PIDKd = 1
+PIDKd = 0.5
 PIDMV = 0
 
 RESETARAMOSTRAS()
@@ -238,8 +238,8 @@ Sub CALCULARFORCAS
   Subtrair = Math.Abs(PIDMV)
   
   'Limita a força utilizada em movimentos para trás em 80% da força padrão.
-  If Math.Abs(Subtrair/ForcaPadrao) > 2 Then
-    Subtrair =  -2*ForcaPadrao
+  If Math.Abs(Subtrair/ForcaPadrao) > 2.2 Then
+    Subtrair =  -2.2*ForcaPadrao
   EndIf
  
   'Diminui o valor da força no sensor que teve o menor valor de leitura. 
