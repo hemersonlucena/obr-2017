@@ -301,7 +301,7 @@ EndSub
 
 Sub MONITORAROBSTACULO
   While "True"
-    If Sensor.ReadRawValue(3, 0) < 40 Then
+    If Sensor.ReadRawValue(3, 0) < 60 Then
       'Solicita o controle de movimento.
       Thread.Lock(MutexPiloto)
       Motor.Stop("BC", "True")
