@@ -14,7 +14,7 @@ ForcaPadrao = -60 'Força padrão utilizada na maioria dos movimentos do robô.
 ForcaObstaculo = -40 'Força utilizada em movimentos precisos no desviar.
 DireitaObstaculo = "True" 'Se verdadeira, o desviar é feito pela direita. Caso contrário, pela esquerda.
 AberturaObstaculo = 1400 'Valor em graus para abertura no desviar.
-ProfundidadeObstaculo = 2500 'Valor em graus para deslocamento no desviar.
+ProfundidadeObstaculo = 2760 'Valor em graus para deslocamento no desviar.
 
 'VARIÁVEIS INICIALIZADAS - aqui são inicializadas variáveis sem valor significativo. Seus valores são definidos ao longo do programa.
 ForcaD = 0
@@ -26,6 +26,19 @@ RGBE[0] = 0
 NoVerde[0] = "False"
 NoVerde[1] = "False"
 FatorAlinhar = 1
+VerificarSala3 = "True"
+
+PIDErro = 0
+PIDUltimoErro = 0
+PIDUltimoTempo = 0
+PIDProporcional = 0
+PIDIntegral = 0
+PIDDerivativa = 0
+PIDKp = 2.6
+PIDKi = 0
+PIDKd = 0.5
+PIDMV = 0
+
 RESETARAMOSTRAS()
 
 
@@ -143,6 +156,10 @@ Sub ATUALIZARCORES
   'Se algum estiver, faz as ações necessárias para virar corretamente na encruzilhada.
   VERIFICARVERDE()
   
+  If VerificarSala3 Then
+    
+  EndIf
+  
   'Função utilizada para depuração. Mostra na tela os valores lidos pelo sensor de cor, assim como as médias calculadas.
   'MOSTRARMEDIAS()
 EndSub
@@ -215,19 +232,26 @@ Sub CALCULARFORCAS
   EV3.SetLEDColor("ORANGE", "NORMAL")
   ForcaE = ForcaPadrao
   ForcaD = ForcaPadrao
-  Diferenca = MediaE - MediaD
-  Subtrair = ForcaPadrao*Math.Abs(Diferenca/7)
+  PIDErro = MediaE - MediaD
+  
+  PIDProporcional = PIDErro
+  PIDIntegral = PIDIntegral + PIDErro * (EV3.Time - PIDUltimoTempo)
+  PIDDerivativa = PIDErro - PIDUltimoErro
+  
+  PIDMV = PIDKp * PIDProporcional + PIDKi * PIDIntegral + PIDKd * PIDDerivativa
+  
+  Subtrair = Math.Abs(PIDMV)
   
   'Limita a força utilizada em movimentos para trás em 80% da força padrão.
-  If Subtrair/ForcaPadrao > 2 Then
-    Subtrair =  2*ForcaPadrao
+  If Math.Abs(Subtrair/ForcaPadrao) > 2.2 Then
+    Subtrair =  -2.2*ForcaPadrao
   EndIf
-  
-  'Diminui o valor da força no sensor que teve o menor valor de leitura.
-  If Diferenca <= 0 Then
-    ForcaE = ForcaE - Subtrair
+ 
+  'Diminui o valor da força no sensor que teve o menor valor de leitura. 
+  If PIDMV < 0 Then
+    ForcaE = ForcaE + Subtrair
   Else
-    ForcaD = ForcaD - Subtrair
+    ForcaD = ForcaD + Subtrair
   EndIf
   
 EndSub
@@ -282,7 +306,7 @@ EndSub
 
 Sub MONITORAROBSTACULO
   While "True"
-    If Sensor.ReadRawValue(3, 0) < 40 Then
+    If Sensor.ReadRawValue(3, 0) < 60 Then
       'Solicita o controle de movimento.
       Thread.Lock(MutexPiloto)
       Motor.Stop("BC", "True")
@@ -313,7 +337,7 @@ Sub MONITORAROBSTACULO
       'Move-se para frente durante a quantidade de graus especificada em ProfundidadeObstaculo.
       Motor.MoveSync("BC", ForcaObstaculo, ForcaObstaculo, ProfundidadeObstaculo, "True")
       
-      'Gira 60º em direção ao trajeto
+      'Gira 90º em direção ao trajeto
       If DireitaObstaculo Then
         Motor.MoveSync("BC", 30, -30, 850, "True")
       Else
@@ -323,7 +347,7 @@ Sub MONITORAROBSTACULO
       'Move-se para frente em direção ao trajeto
       Motor.MoveSync("BC", ForcaObstaculo, ForcaObstaculo, AberturaObstaculo/1.1, "True")
       
-      'Gira 60º no sentido contrário agora, ficando paralelo ao trajeto novamente.
+      'Gira 90º no sentido contrário agora, ficando paralelo ao trajeto novamente.
       If DireitaObstaculo Then
         Motor.MoveSync("BC", -30, 30, 850, "True")
       Else
@@ -354,6 +378,9 @@ EndSub
 
 'Lê o arquivo de calibragem e salva os valores necesários em variáveis.
 ATUALIZARCALIBRAGEM()
+
+'Define o tempo em que foi iniciado o seguir linha
+PIDUltimoTempo = EV3.Time
 
 'Inicia os módulos.
 Thread.Run = SEGUIRLINHA
