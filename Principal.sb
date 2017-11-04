@@ -10,8 +10,6 @@ Sensor.SetMode(3, 0)
 'VARIÁVEIS - aqui são inicializadas variáveis com valores significativos.
 ComprimentoDoRobo = 220 'Comprimento do robô em milímetros.
 MutexPiloto = Thread.CreateMutex() 'Mutex utilizado para o controle de movimento do robô.
-MutexRampa = Thread.CreateMutex() 'Mutex utilizado para o controle da procura pela rampa.
-NaRampa = "False" 'Variável de controle para o seguir linha determinar se  o robô está na rampa ou não.
 ForcaPadrao = -60 'Força padrão utilizada na maioria dos movimentos do robô.
 ForcaObstaculo = -40 'Força utilizada em movimentos precisos no desviar.
 DireitaObstaculo = "True" 'Se verdadeira, o desviar é feito pela direita. Caso contrário, pela esquerda.
@@ -146,7 +144,7 @@ Sub ATUALIZARCORES
   VERIFICARVERDE()
   
   'Função utilizada para depuração. Mostra na tela os valores lidos pelo sensor de cor, assim como as médias calculadas.
-  MOSTRARMEDIAS()
+  'MOSTRARMEDIAS()
 EndSub
 
 
@@ -232,50 +230,6 @@ Sub CALCULARFORCAS
     ForcaD = ForcaD - Subtrair
   EndIf
   
-  If NaRampa Then
-    'Efeito correspondente a 'aumentar' a força padrão para -75.
-    If ForcaE < ForcaD Then
-      ForcaD = -75*ForcaD/ForcaE
-      ForcaE = -75
-    Else
-      ForcaE = -75*ForcaE/ForcaD
-      ForcaD = -75
-    EndIf
-    
-    'Qualquer movimento contrário durante a rampa deixa de exister. O motor apenas para.
-    If ForcaE > 0 Then
-      ForcaE = 0
-    ElseIf ForcaD > 0 Then
-      ForcaD = 0
-    EndIf
-  EndIf
-EndSub
-
-
-Sub RAMPA
-  While "True"
-    'Solicita controle para monitorar a rampa.
-    Thread.Lock(MutexRampa)
-    
-    'Se o sensor ultrassônico lateral detectar uma distância menor que 8cm
-    'durante 750ms, determina-se que o robô está na rampa.
-    If Sensor.ReadRawValue(2, 0) < 80 Then
-      Program.Delay(750)
-      If Sensor.ReadRawValue(2, 0) < 80 Then
-        NaRampa = "True"
-        While Sensor.ReadRawValue(2, 0) < 150
-        EndWhile
-        Thread.Lock(MutexPiloto)
-        Motor.Stop("BC", "True")
-        Program.Delay(5000)
-        Program.End()
-        Thread.Unlock(MutexPiloto)
-      EndIf
-    EndIf
-    
-    'Libera o controle de monitoramento de rampa.
-    Thread.Unlock(MutexRampa)
-  EndWhile
 EndSub
 
 
@@ -333,9 +287,6 @@ Sub MONITORAROBSTACULO
       Thread.Lock(MutexPiloto)
       Motor.Stop("BC", "True")
       
-      'Bloqueia o monitoramento da rampa.
-      Thread.Lock(MutexRampa)
-      
       'Gira 90º para direita se DireitaObstáculo for verdadeira.
       'Caso contrário, gira para a esquerda.
       If DireitaObstaculo Then
@@ -384,7 +335,6 @@ Sub MONITORAROBSTACULO
       Program.Delay(1000)
       Motor.Stop("BC", "True")
       
-      Thread.Unlock(MutexRampa)
       Thread.Unlock(MutexPiloto)
     EndIf
   EndWhile
@@ -408,7 +358,6 @@ ATUALIZARCALIBRAGEM()
 'Inicia os módulos.
 Thread.Run = SEGUIRLINHA
 Thread.Run = MONITORAROBSTACULO
-'Thread.Run = RAMPA
 
 
 'Deixa o thread principal vivo.
