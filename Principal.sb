@@ -14,7 +14,7 @@ ForcaPadrao = -60 'Força padrão utilizada na maioria dos movimentos do robô.
 ForcaObstaculo = -40 'Força utilizada em movimentos precisos no desviar.
 DireitaObstaculo = "True" 'Se verdadeira, o desviar é feito pela direita. Caso contrário, pela esquerda.
 AberturaObstaculo = 1400 'Valor em graus para abertura no desviar.
-ProfundidadeObstaculo = 2500 'Valor em graus para deslocamento no desviar.
+ProfundidadeObstaculo = 2760 'Valor em graus para deslocamento no desviar.
 
 'VARIÁVEIS INICIALIZADAS - aqui são inicializadas variáveis sem valor significativo. Seus valores são definidos ao longo do programa.
 ForcaD = 0
@@ -332,7 +332,7 @@ Sub MONITORAROBSTACULO
       'Move-se para frente durante a quantidade de graus especificada em ProfundidadeObstaculo.
       Motor.MoveSync("BC", ForcaObstaculo, ForcaObstaculo, ProfundidadeObstaculo, "True")
       
-      'Gira 60º em direção ao trajeto
+      'Gira 90º em direção ao trajeto
       If DireitaObstaculo Then
         Motor.MoveSync("BC", 30, -30, 850, "True")
       Else
@@ -342,7 +342,7 @@ Sub MONITORAROBSTACULO
       'Move-se para frente em direção ao trajeto
       Motor.MoveSync("BC", ForcaObstaculo, ForcaObstaculo, AberturaObstaculo/1.1, "True")
       
-      'Gira 60º no sentido contrário agora, ficando paralelo ao trajeto novamente.
+      'Gira 90º no sentido contrário agora, ficando paralelo ao trajeto novamente.
       If DireitaObstaculo Then
         Motor.MoveSync("BC", -30, 30, 850, "True")
       Else
