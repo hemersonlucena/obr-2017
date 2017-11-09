@@ -8,6 +8,7 @@ Sensor.SetMode(2, 0)
 Sensor.SetMode(3, 0)
 
 'VARIÁVEIS - aqui são inicializadas variáveis com valores significativos.
+VerdeOn = "True"
 ComprimentoDoRobo = 220 'Comprimento do robô em milímetros.
 MutexPiloto = Thread.CreateMutex() 'Mutex utilizado para o controle de movimento do robô.
 ForcaPadrao = -60 'Força padrão utilizada na maioria dos movimentos do robô.
@@ -151,12 +152,12 @@ Sub ATUALIZARCORES
       MediaD = Media
       RGBD = Leitura
     EndIf
-  EndFor
+  EndFor  
   'Verifica se o sensor atual está na marcação verde.
   'Se algum estiver, faz as ações necessárias para virar corretamente na encruzilhada.
-  VERIFICARVERDE()
-  
-  
+  If VerdeOn = "True" Then
+    VERIFICARVERDE()
+  EndIf
 EndSub
 
 
@@ -185,8 +186,26 @@ Sub VERIFICARVERDE
   
   If Amostras[0] Or Amostras[1] Then
     Thread.Lock(MutexPiloto)
-    EV3.SetLEDColor("RED", "NORMAL")
-    CURVAVERDE() 'TODO: depender da amostra
+    EV3.SetLEDColor("GREEN", "NORMAL")
+    Motor.Move("BC", 40, 160, "False")
+    VerdeOn = "False"
+    ATUALIZARCORES()
+    If PortaCor = 1 Then
+      If MediaE > 20 Then
+        Motor.Move("BC", -40, 160, "False")
+        CURVAVERDE()
+      Else
+        RESETARAMOSTRAS()
+      EndIf
+    Else
+      If MediaD > 20 Then
+        Motor.Move("BC", -40, 160, "False")
+        CURVAVERDE()
+      Else
+        RESETARAMOSTRAS()
+      EndIf
+    EndIf
+    Thread.Run = DELAYVERDE
     Thread.Unlock(MutexPiloto)
   Else
     BooleanE = "False"
@@ -203,6 +222,24 @@ Sub VERIFICARVERDE
       RESETARAMOSTRAS()
     EndIf
   EndIf
+EndSub
+
+
+Sub DEBUG
+  Motor.Stop("BC", "True")
+  LCD.StopUpdate()
+  LCD.Clear()
+  LCD.Write(10, 10, MediaE)
+  LCD.Write(10, 20, MediaD)
+  LCD.Write(10, 30, PortaCor - 3)
+  LCD.Write(10, 40, VerdeOn)
+  LCD.Update()
+  Buttons.Wait()
+EndSub
+
+Sub DELAYVERDE
+  Program.Delay(3000)
+  VerdeOn = "True"
 EndSub
 
 
@@ -340,62 +377,62 @@ Sub SALA3
     Program.Delay(250)
     If Sensor.ReadRawValue(3, 0) < 200 Then
       For i = 1 To 3
-         Motor.MoveSync("BC", -30, 30, 530, "True")
-         Motor.Move("BC", 30, DistanciaSala3, "True")
-         Motor.MoveSync("BC", 30, -30, 875, "False")
-         Motor.StartPower("D", 10)
-         Program.Delay(500)
-         Motor.Stop("D", "False")
-         Motor.Move("D", 15, 170, "True")
-         Motor.Move("BC", 40, 2000, "False") 'Vai para a parede
-         Motor.Start("BC", 10)
-         Program.Delay(2000)
-         Motor.Stop("BC", "True")
-         Motor.Move("D", -15, 90, "True")
-         Program.Delay(250)
-         Motor.Move("BC", -40, 1400, "False") 'Se afasta da parede
-          If i > 1 Then
-            Motor.MoveSync("BC", 30, -30, 875, "True")
-            Motor.Move("BC", 15, DistanciaSala3 - 760, "True")
-            Motor.MoveSync("BC", -30, 30, 875, "True")
-          EndIf
-          Motor.MoveSync("BC", 30, -30, 1300, "True")
-          Motor.Move("BC", 30, 1850, "False")
-          Motor.Start("D", 45)
-          Program.Delay(200)
-          Motor.Stop("D", "False") 
-          DistanciaSala3 = DistanciaSala3 + 2500
-        EndFor
+        Motor.MoveSync("BC", -30, 30, 530, "True")
+        Motor.Move("BC", 30, DistanciaSala3, "True")
+        Motor.MoveSync("BC", 30, -30, 875, "False")
+        Motor.StartPower("D", 10)
+        Program.Delay(500)
+        Motor.Stop("D", "False")
+        Motor.Move("D", 15, 170, "True")
+        Motor.Move("BC", 40, 2000, "False") 'Vai para a parede
+        Motor.Start("BC", 10)
+        Program.Delay(2000)
+        Motor.Stop("BC", "True")
+        Motor.Move("D", -15, 90, "True")
+        Program.Delay(250)
+        Motor.Move("BC", -40, 1400, "False") 'Se afasta da parede
+        If i > 1 Then
+          Motor.MoveSync("BC", 30, -30, 875, "True")
+          Motor.Move("BC", 15, DistanciaSala3 - 760, "True")
+          Motor.MoveSync("BC", -30, 30, 875, "True")
+        EndIf
+        Motor.MoveSync("BC", 30, -30, 1300, "True")
+        Motor.Move("BC", 30, 1850, "False")
+        Motor.Start("D", 45)
+        Program.Delay(200)
+        Motor.Stop("D", "False") 
+        DistanciaSala3 = DistanciaSala3 + 2500
+      EndFor
     Else 
       For i = 1 To 3
-         Motor.MoveSync("BC", 30, -30, 530, "True")
-         Motor.Move("BC", 30, DistanciaSala3, "True")
-         Motor.MoveSync("BC", -30, 30, 875, "False")
-         Motor.StartPower("D", 10)
-         Program.Delay(500)
-         Motor.Stop("D", "False")
-         Motor.Move("D", 15, 170, "True")
-         Motor.Move("BC", 40, 2000, "False") 'Vai para a parede
-         Motor.Start("BC", 10)
-         Program.Delay(2000)
-         Motor.Stop("BC", "True")
-         Motor.Move("D", -15, 90, "True")
-         Program.Delay(250)
-         Motor.Move("BC", -40, 1400, "False") 'Se afasta da parede
-          If i > 1 Then
-            Motor.MoveSync("BC", -30, 30, 875, "True")
-            Motor.Move("BC", 15, DistanciaSala3 - 760, "True")
-            Motor.MoveSync("BC", 30, -30, 875, "True")
-          EndIf
-          Motor.MoveSync("BC", -30, 30, 1300, "True")
-          Motor.Move("BC", 30, 1850, "False")
-          Motor.Start("D", 45)
-          Program.Delay(200)
-          Motor.Stop("D", "False") 
-          DistanciaSala3 = DistanciaSala3 + 2500
-        EndFor      
-      EndIf
-    Endif
+        Motor.MoveSync("BC", 30, -30, 530, "True")
+        Motor.Move("BC", 30, DistanciaSala3, "True")
+        Motor.MoveSync("BC", -30, 30, 875, "False")
+        Motor.StartPower("D", 10)
+        Program.Delay(500)
+        Motor.Stop("D", "False")
+        Motor.Move("D", 15, 170, "True")
+        Motor.Move("BC", 40, 2000, "False") 'Vai para a parede
+        Motor.Start("BC", 10)
+        Program.Delay(2000)
+        Motor.Stop("BC", "True")
+        Motor.Move("D", -15, 90, "True")
+        Program.Delay(250)
+        Motor.Move("BC", -40, 1400, "False") 'Se afasta da parede
+        If i > 1 Then
+          Motor.MoveSync("BC", -30, 30, 875, "True")
+          Motor.Move("BC", 15, DistanciaSala3 - 760, "True")
+          Motor.MoveSync("BC", 30, -30, 875, "True")
+        EndIf
+        Motor.MoveSync("BC", -30, 30, 1300, "True")
+        Motor.Move("BC", 30, 1850, "False")
+        Motor.Start("D", 45)
+        Program.Delay(200)
+        Motor.Stop("D", "False") 
+        DistanciaSala3 = DistanciaSala3 + 2500
+      EndFor      
+    EndIf
+  Endif
 EndSub
 Sub MONITORAROBSTACULO
   While "True"
